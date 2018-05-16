@@ -1,0 +1,7 @@
+resolver: lts-12.0
+
+packages:
+- .
+
+extra-deps:
+- either-both-0.1.0.0
