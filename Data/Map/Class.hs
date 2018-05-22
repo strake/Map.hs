@@ -1,8 +1,10 @@
 module Data.Map.Class where
 
 import Control.Applicative
+import Control.Monad
 import Data.Either.Both
 import Data.Filtrable
+import Data.Functor.Identity
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as Int
 import qualified Data.Map as M
@@ -40,3 +42,13 @@ instance Ord key => Map (M.Map key) where
                         (M.zipWithMaybeAMatched $ \ k a b -> f k (Both a b))
     mapMaybeWithKeyA f = fmap catMaybes . M.traverseWithKey f
     mapEitherWithKeyA f = fmap partitionEithers . M.traverseWithKey f
+
+infix 9 !?
+(!?) :: Map map => map a -> Key map -> Maybe a
+as !? k = fst $ alterF (join (,)) k as
+
+mapMaybeWithKey :: Map map => (Key map -> a -> Maybe b) -> map a -> map b
+mapMaybeWithKey f = runIdentity . mapMaybeWithKeyA (pure ∘∘ f)
+
+mapEitherWithKey :: Map map => (Key map -> a -> Either b c) -> map a -> (map b, map c)
+mapEitherWithKey f = runIdentity . mapEitherWithKeyA (pure ∘∘ f)
