@@ -18,6 +18,7 @@ class Traversable map => StaticMap map where
     adjustA :: Applicative p => (a -> p a) -> Key map -> map a -> p (map a)
 
 class (Filtrable map, StaticMap map) => Map map where
+    empty :: map a
     alterF :: Functor f => (Maybe a -> f (Maybe a)) -> Key map -> map a -> f (map a)
     mergeA :: Applicative p => (Key map -> Either' a b -> p (Maybe c)) -> map a -> map b -> p (map c)
     mapMaybeWithKeyA :: Applicative p => (Key map -> a -> p (Maybe b)) -> map a -> p (map b)
@@ -43,6 +44,7 @@ instance Ord key => StaticMap (M.Map key) where
     adjustA = defaultAdjustA
 
 instance Map IntMap where
+    empty = Int.empty
     alterF = Int.alterF
     mergeA f = mapMaybeWithKeyA f ∘∘
                Int.mergeWithKey (pure $ Just ∘∘ Both) (fmap JustLeft) (fmap JustRight)
@@ -50,6 +52,7 @@ instance Map IntMap where
     mapEitherWithKeyA f = fmap partitionEithers . Int.traverseWithKey f
 
 instance Ord key => Map (M.Map key) where
+    empty = M.empty
     alterF = M.alterF
     mergeA f = M.mergeA (M.traverseMaybeMissing $ \ k a -> f k (JustLeft a))
                         (M.traverseMaybeMissing $ \ k b -> f k (JustRight b))
