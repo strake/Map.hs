@@ -41,6 +41,11 @@ instance Filtrable IntMap where
 instance Filtrable (M.Map key) where
     mapMaybe = M.mapMaybe
 
+instance StaticMap Maybe where
+    type Key Maybe = ()
+    adjustA f () = traverse f
+    traverseWithKey f = traverse (f ())
+
 instance StaticMap IntMap where
     type Key IntMap = Int
     adjustA = defaultAdjustA
@@ -50,6 +55,12 @@ instance Ord key => StaticMap (M.Map key) where
     type Key (M.Map key) = key
     adjustA = defaultAdjustA
     traverseWithKey = defaultTraverseWithKey
+
+instance Map Maybe where
+    empty = Nothing
+    alterF = pure
+    mergeA f = mapMaybeWithKeyA f ∘∘ fromMaybes
+    mapMaybeWithKeyA f = mapMaybeA (f ())
 
 instance Map IntMap where
     empty = Int.empty
