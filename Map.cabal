@@ -17,7 +17,7 @@ library
   exposed-modules:     Data.Map.Class
   other-modules:       Util.Private
   build-depends:       base >= 4.7 && < 5
-                     , containers >=0.5.9 && <0.6
+                     , containers >=0.5.9 && <0.7
                      , either-both >=0.1.1 && <0.2
                      , filtrable >=0.1.2 && <0.2
                      , util >=0.1.10 && <0.2
