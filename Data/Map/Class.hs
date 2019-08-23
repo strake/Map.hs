@@ -5,6 +5,8 @@ import Control.Arrow
 import Data.Either.Both
 import Data.Filtrable
 import qualified Data.Foldable as Foldable
+import Data.Function (on)
+import Data.Functor.Classes
 import Data.Functor.Compose
 import Data.Functor.Identity
 import Data.Functor.Product
@@ -211,3 +213,78 @@ traverseKeys f = fmap (flip appEndo empty) . foldMapWithKeyA (\ i a -> (\ j -> E
 
 keys :: StaticMap map => map a -> map (Key map)
 keys = mapWithKey pure
+
+newtype Union map a = Union { unUnion :: map a }
+  deriving (Functor, Foldable, Traversable)
+  deriving newtype (Eq, Ord, Read, Show, Eq1, Ord1, Read1, Show1)
+
+instance Filtrable map => Filtrable (Union map) where
+    mapMaybe f = Union . mapMaybe f . unUnion
+
+instance StaticMap map => StaticMap (Union map) where
+    type Key (Union map) = Key map
+    adjustA f k = fmap Union . adjustA f k . unUnion
+    traverseWithKey f = fmap Union . traverseWithKey f . unUnion
+
+instance Map map => Map (Union map) where
+    empty = Union empty
+    alterF f k = fmap Union . alterF f k . unUnion
+    mergeA f = fmap Union ∘∘ compose2 (mergeA f) unUnion unUnion
+    mapMaybeWithKeyA f = fmap Union . mapMaybeWithKeyA f . unUnion
+
+instance (Map map, Semigroup a) => Semigroup (Union map a) where
+    (<>) = Union ∘∘ runIdentity ∘∘ mergeA (pure $ Identity ∘ Just ∘ either' id id (<>)) `on` unUnion
+
+instance (Ord k, Semigroup a) => Monoid (Union (M.Map k) a) where
+    mempty = Union M.empty
+
+instance Semigroup a => Monoid (Union IntMap a) where
+    mempty = Union Int.empty
+
+newtype Intersection map a = Intersection { unIntersection :: map a }
+  deriving (Functor, Foldable, Traversable)
+  deriving newtype (Eq, Ord, Read, Show, Eq1, Ord1, Read1, Show1)
+
+instance Filtrable map => Filtrable (Intersection map) where
+    mapMaybe f = Intersection . mapMaybe f . unIntersection
+
+instance StaticMap map => StaticMap (Intersection map) where
+    type Key (Intersection map) = Key map
+    adjustA f k = fmap Intersection . adjustA f k . unIntersection
+    traverseWithKey f = fmap Intersection . traverseWithKey f . unIntersection
+
+instance Map map => Map (Intersection map) where
+    empty = Intersection empty
+    alterF f k = fmap Intersection . alterF f k . unIntersection
+    mergeA f = fmap Intersection ∘∘ compose2 (mergeA f) unIntersection unIntersection
+    mapMaybeWithKeyA f = fmap Intersection . mapMaybeWithKeyA f . unIntersection
+
+instance (Map map, Semigroup a) => Semigroup (Intersection map a) where
+    (<>) = Intersection ∘∘ merge (pure $ (uncurry . liftA2) (<>) ∘ toMaybes) `on` unIntersection
+
+newtype SymmetricDifference map a = SymmetricDifference { unSymmetricDifference :: map a }
+  deriving (Functor, Foldable, Traversable)
+  deriving newtype (Eq, Ord, Read, Show, Eq1, Ord1, Read1, Show1)
+
+instance Filtrable map => Filtrable (SymmetricDifference map) where
+    mapMaybe f = SymmetricDifference . mapMaybe f . unSymmetricDifference
+
+instance StaticMap map => StaticMap (SymmetricDifference map) where
+    type Key (SymmetricDifference map) = Key map
+    adjustA f k = fmap SymmetricDifference . adjustA f k . unSymmetricDifference
+    traverseWithKey f = fmap SymmetricDifference . traverseWithKey f . unSymmetricDifference
+
+instance Map map => Map (SymmetricDifference map) where
+    empty = SymmetricDifference empty
+    alterF f k = fmap SymmetricDifference . alterF f k . unSymmetricDifference
+    mergeA f = fmap SymmetricDifference ∘∘ compose2 (mergeA f) unSymmetricDifference unSymmetricDifference
+    mapMaybeWithKeyA f = fmap SymmetricDifference . mapMaybeWithKeyA f . unSymmetricDifference
+
+instance Map map => Semigroup (SymmetricDifference map a) where
+    (<>) = SymmetricDifference ∘∘ merge (pure $ either' Just Just (\ _ _ -> Nothing)) `on` unSymmetricDifference
+
+instance Ord k => Monoid (SymmetricDifference (M.Map k) a) where
+    mempty = SymmetricDifference M.empty
+
+instance Monoid (SymmetricDifference IntMap a) where
+    mempty = SymmetricDifference Int.empty
