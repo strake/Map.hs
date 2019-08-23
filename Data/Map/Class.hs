@@ -7,12 +7,13 @@ import Data.Filtrable
 import qualified Data.Foldable as Foldable
 import Data.Functor.Compose
 import Data.Functor.Identity
+import Data.Functor.Product
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as Int
 import qualified Data.Map as M
 import qualified Data.Map.Merge.Lazy as M
 import Data.Monoid (Dual (..), Last (..))
-import Util ((∘∘))
+import Util ((∘), (∘∘), compose2)
 import Util.Private (Endo (..))
 
 class Traversable map => StaticMap map where
@@ -56,6 +57,19 @@ instance Ord key => StaticMap (M.Map key) where
     adjustA = defaultAdjustA
     traverseWithKey = defaultTraverseWithKey
 
+instance (StaticMap m, StaticMap n) => StaticMap (Compose m n) where
+    type Key (Compose m n) = (Key m, Key n)
+    adjustA f (i, j) = fmap Compose . adjustA (adjustA f j) i . getCompose
+    traverseWithKey f = fmap Compose ∘ traverseWithKey (\ i -> traverseWithKey (\ j -> f (i, j))) ∘ getCompose
+
+instance (StaticMap m, StaticMap n) => StaticMap (Product m n) where
+    type Key (Product m n) = Either (Key m) (Key n)
+    adjustA f k (Pair a b) = case k of
+        Left  i -> flip Pair b <$> adjustA f i a
+        Right j -> id   Pair a <$> adjustA f j b
+    traverseWithKey f (Pair a b) =
+        Pair <$> traverseWithKey (f ∘ Left) a <*> traverseWithKey (f ∘ Right) b
+
 instance Map Maybe where
     empty = Nothing
     alterF = pure
@@ -78,6 +92,25 @@ instance Ord key => Map (M.Map key) where
                         (M.zipWithMaybeAMatched $ \ k a b -> f k (Both a b))
     mapMaybeWithKeyA f = fmap catMaybes . M.traverseWithKey f
     mapEitherWithKeyA f = fmap partitionEithers . M.traverseWithKey f
+
+instance (Map m, Map n) => Map (Compose m n) where
+    empty = Compose empty
+    alterF f (i, j) = fmap Compose . alterF (maybe (Nothing <$ f Nothing) (fmap Just . alterF f j)) i . getCompose
+    mergeA f =
+        fmap Compose ∘∘
+        compose2 (mergeA $ \ i ->
+                  fmap Just ∘ either' (mapMaybeWithKeyA $ \ j -> f (i, j) ∘ JustLeft)
+                                      (mapMaybeWithKeyA $ \ j -> f (i, j) ∘ JustRight)
+                                      (mergeA $ \ j -> f (i, j))) getCompose getCompose
+    mapMaybeWithKeyA f = fmap Compose . mapMaybeWithKeyA (\ i -> fmap Just . mapMaybeWithKeyA (\ j -> f (i, j))) . getCompose
+
+instance (Map m, Map n) => Map (Product m n) where
+    empty = Pair empty empty
+    alterF f k (Pair a b) = case k of
+        Left  i -> flip Pair b <$> alterF f i a
+        Right j -> id   Pair a <$> alterF f j b
+    mergeA f (Pair a₀ b₀) (Pair a₁ b₁) = Pair <$> mergeA (f . Left) a₀ a₁ <*> mergeA (f . Right) b₀ b₁
+    mapMaybeWithKeyA f (Pair a b) = Pair <$> mapMaybeWithKeyA (f . Left) a <*> mapMaybeWithKeyA (f . Right) b
 
 infix 9 !?
 (!?) :: StaticMap map => map a -> Key map -> Maybe a
