@@ -242,7 +242,7 @@ instance Map map => Map (Union map) where
     mapMaybeWithKeyA f = fmap Union . mapMaybeWithKeyA f . unUnion
 
 instance (Map map, Semigroup a) => Semigroup (Union map a) where
-    (<>) = Union ∘∘ runIdentity ∘∘ mergeA (pure $ Identity ∘ Just ∘ either' id id (<>)) `on` unUnion
+    (<>) = Union ∘∘ unionWith (pure (<>)) `on` unUnion
 
 instance (Ord k, Semigroup a) => Monoid (Union (M.Map k) a) where
     mempty = Union M.empty
@@ -269,7 +269,7 @@ instance Map map => Map (Intersection map) where
     mapMaybeWithKeyA f = fmap Intersection . mapMaybeWithKeyA f . unIntersection
 
 instance (Map map, Semigroup a) => Semigroup (Intersection map a) where
-    (<>) = Intersection ∘∘ merge (pure $ (uncurry . liftA2) (<>) ∘ toMaybes) `on` unIntersection
+    (<>) = Intersection ∘∘ intersectionWith (pure (<>)) `on` unIntersection
 
 newtype SymmetricDifference map a = SymmetricDifference { unSymmetricDifference :: map a }
   deriving (Functor, Foldable, Traversable)
@@ -290,7 +290,7 @@ instance Map map => Map (SymmetricDifference map) where
     mapMaybeWithKeyA f = fmap SymmetricDifference . mapMaybeWithKeyA f . unSymmetricDifference
 
 instance Map map => Semigroup (SymmetricDifference map a) where
-    (<>) = SymmetricDifference ∘∘ merge (pure $ either' Just Just (\ _ _ -> Nothing)) `on` unSymmetricDifference
+    (<>) = SymmetricDifference ∘∘ symmetricDifference `on` unSymmetricDifference
 
 instance Ord k => Monoid (SymmetricDifference (M.Map k) a) where
     mempty = SymmetricDifference M.empty
