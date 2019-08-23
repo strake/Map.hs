@@ -148,6 +148,9 @@ alter f = runIdentity ∘∘ alterF (Identity . f)
 alterLookup :: Map map => (Maybe a -> Maybe a) -> Key map -> map a -> (Maybe a, map a)
 alterLookup f = alterF ((,) <*> f)
 
+alterLookupF :: (Map map, Functor f) => (Maybe a -> f (Maybe a)) -> Key map -> map a -> f (Maybe a, map a)
+alterLookupF f = getCompose ∘∘ alterF (Compose ∘ liftA2 fmap (,) f)
+
 mapWithKey :: StaticMap map => (Key map -> a -> b) -> map a -> map b
 mapWithKey f = runIdentity . traverseWithKey (Identity ∘∘ f)
 
@@ -204,6 +207,12 @@ unionWithA f = mergeA (\ k -> \ case JustLeft a -> pure (Just a); JustRight a ->
 
 intersectionWithA :: (Map map, Applicative p) => (Key map -> a -> b -> p c) -> map a -> map b -> p (map c)
 intersectionWithA f = mergeA (\ k -> \ case Both a b -> Just <$> f k a b; _ -> pure Nothing)
+
+difference :: Map map => map a -> map b -> map a
+difference = merge $ pure $ either' Just (pure Nothing) $ \ _ _ -> Nothing
+
+symmetricDifference :: Map map => map a -> map a -> map a
+symmetricDifference = merge $ pure $ either' Just Just $ \ _ _ -> Nothing
 
 mapKeys :: (StaticMap m, Map n) => (Key m -> Key n) -> m a -> n a
 mapKeys f = foldrWithKey (insert . f) empty
