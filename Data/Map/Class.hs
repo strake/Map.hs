@@ -244,11 +244,8 @@ instance Map map => Map (Union map) where
 instance (Map map, Semigroup a) => Semigroup (Union map a) where
     (<>) = Union ∘∘ unionWith (pure (<>)) `on` unUnion
 
-instance (Ord k, Semigroup a) => Monoid (Union (M.Map k) a) where
-    mempty = Union M.empty
-
-instance Semigroup a => Monoid (Union IntMap a) where
-    mempty = Union Int.empty
+instance (Map map, Semigroup a) => Monoid (Union map a) where
+    mempty = Union empty
 
 newtype Intersection map a = Intersection { unIntersection :: map a }
   deriving (Functor, Foldable, Traversable)
@@ -292,8 +289,5 @@ instance Map map => Map (SymmetricDifference map) where
 instance Map map => Semigroup (SymmetricDifference map a) where
     (<>) = SymmetricDifference ∘∘ symmetricDifference `on` unSymmetricDifference
 
-instance Ord k => Monoid (SymmetricDifference (M.Map k) a) where
-    mempty = SymmetricDifference M.empty
-
-instance Monoid (SymmetricDifference IntMap a) where
-    mempty = SymmetricDifference Int.empty
+instance Map map => Monoid (SymmetricDifference map a) where
+    mempty = SymmetricDifference empty
