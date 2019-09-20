@@ -15,7 +15,7 @@ import qualified Data.IntMap as Int
 import qualified Data.Map as M
 import qualified Data.Map.Merge.Lazy as M
 import Data.Monoid (Dual (..), Last (..))
-import Util ((∘), (∘∘), compose2)
+import Util ((∘), (∘∘), compose2, bind2)
 import Util.Private (Endo (..))
 
 class Traversable map => StaticMap map where
@@ -186,6 +186,12 @@ fromListWith = fromListWithKey . pure
 
 fromListWithKey :: Map map => (Key map -> a -> a -> a) -> [(Key map, a)] -> map a
 fromListWithKey f = Foldable.foldl' (flip . uncurry $ insertWith =<< f) empty
+
+fromListWithM :: (Map map, Monad m) => (a -> a -> m a) -> [(Key map, a)] -> m (map a)
+fromListWithM = fromListWithKeyM . pure
+
+fromListWithKeyM :: (Map map, Monad m) => (Key map -> a -> a -> m a) -> [(Key map, a)] -> m (map a)
+fromListWithKeyM f = sequenceA . fromListWithKey (bind2 . f) . (fmap . fmap) pure
 
 adjustLookupA :: (StaticMap map, Applicative p) => (a -> p a) -> Key map -> map a -> p (Maybe a, map a)
 adjustLookupA f = sequenceA ∘∘ (getLast *** id <<< getCompose) ∘∘ adjustA (\ a -> Compose (pure a, f a))
