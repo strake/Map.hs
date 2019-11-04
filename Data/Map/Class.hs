@@ -223,8 +223,26 @@ symmetricDifference = merge $ pure $ either' Just Just $ \ _ _ -> Nothing
 mapKeys :: (StaticMap m, Map n) => (Key m -> Key n) -> m a -> n a
 mapKeys f = foldrWithKey (insert . f) empty
 
+mapKeysWith :: (StaticMap m, Map n) => (a -> a -> a) -> (Key m -> Key n) -> m a -> n a
+mapKeysWith combine f = foldrWithKey (insertWith combine . f) empty
+
 traverseKeys :: (StaticMap m, Map n, Applicative p) => (Key m -> p (Key n)) -> m a -> p (n a)
 traverseKeys f = fmap (flip appEndo empty) . foldMapWithKeyA (\ i a -> (\ j -> Endo $ insert j a) <$> f i)
+
+traverseKeysWith :: (StaticMap m, Map n, Applicative p) => (a -> a -> a) -> (Key m -> p (Key n)) -> m a -> p (n a)
+traverseKeysWith combine f = fmap (flip appEndo empty) . foldMapWithKeyA (\ i a -> (\ j -> Endo $ insertWith combine j a) <$> f i)
+
+mapKeysMaybe :: (StaticMap m, Map n) => (Key m -> Maybe (Key n)) -> m a -> n a
+mapKeysMaybe f = runIdentity . traverseKeysMaybe (Identity . f)
+
+mapKeysMaybeWith :: (StaticMap m, Map n) => (a -> a -> a) -> (Key m -> Maybe (Key n)) -> m a -> n a
+mapKeysMaybeWith combine f = runIdentity . traverseKeysMaybeWith combine (Identity . f)
+
+traverseKeysMaybe :: (StaticMap m, Map n, Applicative p) => (Key m -> p (Maybe (Key n))) -> m a -> p (n a)
+traverseKeysMaybe f = fmap (flip appEndo empty) . foldMapWithKeyA (\ i a -> foldMap (\ j -> Endo $ insert j a) <$> f i)
+
+traverseKeysMaybeWith :: (StaticMap m, Map n, Applicative p) => (a -> a -> a) -> (Key m -> p (Maybe (Key n))) -> m a -> p (n a)
+traverseKeysMaybeWith combine f = fmap (flip appEndo empty) . foldMapWithKeyA (\ i a -> foldMap (\ j -> Endo $ insertWith combine j a) <$> f i)
 
 keys :: StaticMap map => map a -> map (Key map)
 keys = mapWithKey pure
