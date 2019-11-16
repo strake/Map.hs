@@ -97,7 +97,7 @@ instance Ord key => Map (M.Map key) where
 
 instance (Map m, Map n) => Map (Compose m n) where
     empty = Compose empty
-    alterF f (i, j) = fmap Compose . alterF (maybe (Nothing <$ f Nothing) (fmap Just . alterF f j)) i . getCompose
+    alterF f (i, j) = fmap Compose . alterF (maybe (fmap (singleton j) <$> f Nothing) (fmap Just . alterF f j)) i . getCompose
     mergeA f =
         fmap Compose ∘∘
         compose2 (mergeA $ \ i ->
