@@ -20,7 +20,7 @@ library
                      , containers >=0.5.9 && <0.7
                      , either-both >=0.1.1 && <0.2
                      , filtrable >=0.1.2 && <0.2
-                     , util >=0.1.10 && <0.2
+                     , util >=0.1.14.1 && <0.2
   default-language:    Haskell2010
   default-extensions:  UnicodeSyntax
                      , LambdaCase
@@ -33,9 +33,9 @@ library
                      , FlexibleContexts
                      , FlexibleInstances
                      , StandaloneDeriving
-                     , GeneralizedNewtypeDeriving
+                     , DerivingVia
                      , DeriveFunctor, DeriveFoldable, DeriveTraversable
-                     , DerivingStrategies
+                     , Safe
   ghc-options:         -Wall -Wcompat -Wredundant-constraints -Wno-name-shadowing
                        -Wincomplete-record-updates -Wincomplete-uni-patterns
                        -Werror=incomplete-patterns

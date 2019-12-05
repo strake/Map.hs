@@ -249,7 +249,8 @@ keys = mapWithKey pure
 
 newtype Union map a = Union { unUnion :: map a }
   deriving (Functor, Foldable, Traversable)
-  deriving newtype (Eq, Ord, Read, Show, Eq1, Ord1, Read1, Show1)
+  deriving (Eq, Ord, Read, Show) via map a
+  deriving (Eq1, Ord1, Read1, Show1) via map
 
 instance Filtrable map => Filtrable (Union map) where
     mapMaybe f = Union . mapMaybe f . unUnion
@@ -273,7 +274,8 @@ instance (Map map, Semigroup a) => Monoid (Union map a) where
 
 newtype Intersection map a = Intersection { unIntersection :: map a }
   deriving (Functor, Foldable, Traversable)
-  deriving newtype (Eq, Ord, Read, Show, Eq1, Ord1, Read1, Show1)
+  deriving (Eq, Ord, Read, Show) via map a
+  deriving (Eq1, Ord1, Read1, Show1) via map
 
 instance Filtrable map => Filtrable (Intersection map) where
     mapMaybe f = Intersection . mapMaybe f . unIntersection
@@ -294,7 +296,8 @@ instance (Map map, Semigroup a) => Semigroup (Intersection map a) where
 
 newtype SymmetricDifference map a = SymmetricDifference { unSymmetricDifference :: map a }
   deriving (Functor, Foldable, Traversable)
-  deriving newtype (Eq, Ord, Read, Show, Eq1, Ord1, Read1, Show1)
+  deriving (Eq, Ord, Read, Show) via map a
+  deriving (Eq1, Ord1, Read1, Show1) via map
 
 instance Filtrable map => Filtrable (SymmetricDifference map) where
     mapMaybe f = SymmetricDifference . mapMaybe f . unSymmetricDifference
