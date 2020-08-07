@@ -19,7 +19,7 @@ library
   build-depends:       base >= 4.7 && < 5
                      , containers >=0.5.9 && <0.7
                      , either-both >=0.1.1 && <0.2
-                     , filtrable >=0.1.2 && <0.2
+                     , filtrable >=0.1.6 && <0.2
                      , util >=0.1.14.1 && <0.2
   default-language:    Haskell2010
   default-extensions:  UnicodeSyntax
