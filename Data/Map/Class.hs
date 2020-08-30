@@ -62,12 +62,6 @@ defaultAdjustA f = alterF (traverse f)
 defaultTraverseWithKey :: (Map map, Applicative p) => (Key map -> a -> p b) -> map a -> p (map b)
 defaultTraverseWithKey f = mapMaybeWithKeyA (fmap Just ∘∘ f)
 
-instance Filtrable IntMap where
-    mapMaybe = Int.mapMaybe
-
-instance Filtrable (M.Map key) where
-    mapMaybe = M.mapMaybe
-
 instance StaticMap Maybe where
     type Key Maybe = ()
     adjustA f () = traverse f
